@@ -6,26 +6,13 @@ import numpy as np
 import io
 import os
 
-
 # -------------------
 # Flask app setup
 # -------------------
 app = Flask(__name__)
 
-# CORS configuration
-CORS(app,
-     resources={r"/*": {
-         "origins": [
-             "https://osteodetector-frontend.vercel.app",
-             "http://localhost:5173",
-             "http://localhost:3000",
-             "http://127.0.0.1:5173"
-         ],
-         "allow_headers": ["Content-Type", "Authorization"],
-         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-         "supports_credentials": True
-     }})
-
+# Simple CORS - allow all origins
+CORS(app, supports_credentials=True)
 
 # -------------------
 # Model config
@@ -33,15 +20,12 @@ CORS(app,
 MODEL_PATH = "model.keras"
 IMG_SIZE = (224, 224)
 
-
 # Same order as in training: image_dataset_from_directory -> ['Normal', 'Osteoarthritis']
 CLASS_NAMES = ["Normal", "Osteoarthritis"]
-
 
 print("Loading model...")
 model = load_model(MODEL_PATH)
 print("Model loaded successfully.")
-
 
 # -------------------
 # Helper: preprocess uploaded image
@@ -61,16 +45,11 @@ def preprocess_image(file_storage):
     arr = np.expand_dims(arr, axis=0)         # (1, H, W, 3)
     return arr
 
-
 # -------------------
 # Prediction endpoint
 # -------------------
-@app.route("/predict", methods=["POST", "OPTIONS"])
+@app.route("/predict", methods=["POST"])
 def predict():
-    # Handle preflight requests
-    if request.method == "OPTIONS":
-        return "", 204
-
     if "image" not in request.files:
         return jsonify({"error": "No image file provided with key 'image'"}), 400
 
@@ -108,16 +87,12 @@ def predict():
         print("Error during prediction:", e)
         return jsonify({"error": "Prediction failed"}), 500
 
-
 # -------------------
 # Health check
 # -------------------
-@app.route("/health", methods=["GET", "OPTIONS"])
+@app.route("/health", methods=["GET"])
 def health():
-    if request.method == "OPTIONS":
-        return "", 204
     return jsonify({"status": "ok"}), 200
-
 
 # -------------------
 # Run server
